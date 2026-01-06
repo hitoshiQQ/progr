@@ -37,15 +37,26 @@ class CoinKeeperApp:
         top.pack(pady=10)
 
         self.type_var = tk.StringVar(value="Расход")
-        ttk.Combobox(top, textvariable=self.type_var, values=["Доход", "Расход"], width=10).grid(row=0, column=0)
+        ttk.Combobox(
+            top, textvariable=self.type_var,
+            values=["Доход", "Расход"], width=10).grid(row=0, column=0)
+
         self.category = ttk.Entry(top, width=20)
         self.category.grid(row=0, column=1, padx=5)
         self.amount = ttk.Entry(top, width=10)
         self.amount.grid(row=0, column=2, padx=5)
-        ttk.Button(top, text="Добавить", command=self.add_record).grid(row=0, column=3)
-        ttk.Button(top, text="График", command=lambda: expenses_by_category(self.records)).grid(row=0, column=4)
+        ttk.Button(
+            top, text="Добавить",
+            command=self.add_record).grid(row=0, column=3)
 
-        self.table = ttk.Treeview(f, columns=("date", "type", "category", "amount"), show="headings")
+        ttk.Button(
+            top, text="График", command=lambda:
+            expenses_by_category(self.records)).grid(row=0, column=4)
+
+        self.table = ttk.Treeview(
+            f,
+            columns=("date", "type", "category", "amount"), show="headings")
+
         for c in self.table["columns"]:
             self.table.heading(c, text=c.capitalize())
         self.table.pack(fill="both", expand=True, padx=10, pady=10)
@@ -77,9 +88,13 @@ class CoinKeeperApp:
             self.table.delete(i)
         for r in self.records:
             sign = "+" if r.type == "Доход" else "-"
-            self.table.insert("", "end", values=(r.date, r.type, r.category, f"{sign}{r.amount} ₽"))
+            self.table.insert(
+                "", "end",
+                values=(r.date, r.type, r.category, f"{sign}{r.amount} ₽"))
+
         inc, exp, bal = calculate_totals(self.records)
-        self.total_label.config(text=f"Доходы: {inc} ₽  Расходы: {exp} ₽  Баланс: {bal} ₽")
+        self.total_label.config(
+            text=f"Доходы: {inc} ₽  Расходы: {exp} ₽  Баланс: {bal} ₽")
 
     # -------- ЦЕЛИ --------
     def build_goals_tab(self):
@@ -91,14 +106,21 @@ class CoinKeeperApp:
         self.goal_name.grid(row=0, column=0, padx=5)
         self.goal_target = ttk.Entry(top, width=10)
         self.goal_target.grid(row=0, column=1, padx=5)
-        ttk.Button(top, text="Добавить цель", command=self.add_goal).grid(row=0, column=2)
+        ttk.Button(
+            top, text="Добавить цель",
+            command=self.add_goal).grid(row=0, column=2)
 
-        self.goals_table = ttk.Treeview(f, columns=("name", "target", "saved", "progress"), show="headings")
+        self.goals_table = ttk.Treeview(
+            f,
+            columns=("name", "target", "saved", "progress"), show="headings")
+
         for c in self.goals_table["columns"]:
             self.goals_table.heading(c, text=c.capitalize())
         self.goals_table.pack(fill="both", expand=True, padx=10, pady=10)
 
-        ttk.Button(f, text="Пополнить выбранную цель", command=self.add_to_goal).pack(pady=5)
+        ttk.Button(
+            f, text="Пополнить выбранную цель",
+            command=self.add_to_goal).pack(pady=5)
         self.refresh_goals()
 
     def add_goal(self):
@@ -130,7 +152,9 @@ class CoinKeeperApp:
             self.goals_table.delete(i)
         for g in self.goals:
             progress = round((g.saved / g.target) * 100, 1)
-            self.goals_table.insert("", "end", values=(g.name, g.target, g.saved, f"{progress}%"))
+            self.goals_table.insert(
+                "", "end",
+                values=(g.name, g.target, g.saved, f"{progress}%"))
 
 
 if __name__ == "__main__":
