@@ -107,9 +107,21 @@ class CoinKeeperApp:
 
         self.goal_target = ttk.Entry(top, width=10)
         self.goal_target.grid(row=0, column=1, padx=5)
+
+        # Кнопки
         ttk.Button(
             top, text="Добавить цель",
             command=self.add_goal).grid(row=0, column=2)
+
+        ttk.Button(
+            f, text="Пополнить выбранную цель",
+            command=self.add_to_goal).pack(pady=5)
+
+        ttk.Button(
+            f,
+            text="Удалить выбранную цель",
+            command=self.delete_goal
+        ).pack(pady=5)
 
         # Создание прогресс бара цели
         self.goals_table = ttk.Treeview(
@@ -143,10 +155,6 @@ class CoinKeeperApp:
 
         self.refresh_goals()
 
-        ttk.Button(
-            f, text="Пополнить выбранную цель",
-            command=self.add_to_goal).pack(pady=5)
-
     def add_goal(self):
         try:
             target = float(self.goal_target.get())
@@ -160,16 +168,53 @@ class CoinKeeperApp:
         except ValueError:
             messagebox.showerror("Ошибка", "Некорректная цель")
 
+    def delete_goal(self):
+        selected = self.goals_table.focus()
+        if not selected:
+            messagebox.showwarning("Внимание", "Выберите цель")
+            return
+
+        idx = self.goals_table.index(selected)
+        goal = self.goals[idx]
+
+        if not messagebox.askyesno(
+            "Удаление",
+            f"Удалить цель «{goal.name}»?"
+        ):
+            return
+
+        self.goals.pop(idx)
+        save_goals(self.goals)
+        self.refresh_goals()
+
+        self.goal_progress["value"] = 0
+        self.goal_progress_label.config(text="Прогресс: 0%")
+
     def add_to_goal(self):
         selected = self.goals_table.focus()
         if not selected:
             return
+
         idx = self.goals_table.index(selected)
         amount = simpledialog.askfloat("Пополнение", "Сумма:")
+
         if amount and amount > 0:
             self.goals[idx].saved += amount
+
+        if self.goals[idx].saved >= self.goals[idx].target:
+            messagebox.showinfo(
+                "Цель достигнута 🎉",
+                f"Цель «{self.goals[idx].name}» достигнута!"
+            )
+            self.goals.pop(idx)
+        else:
             save_goals(self.goals)
-            self.refresh_goals()
+
+        save_goals(self.goals)
+        self.refresh_goals()
+
+        self.goal_progress["value"] = 0
+        self.goal_progress_label.config(text="Прогресс: 0%")
 
     def refresh_goals(self):
         for i in self.goals_table.get_children():
