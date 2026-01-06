@@ -104,24 +104,48 @@ class CoinKeeperApp:
 
         self.goal_name = ttk.Entry(top, width=20)
         self.goal_name.grid(row=0, column=0, padx=5)
+
         self.goal_target = ttk.Entry(top, width=10)
         self.goal_target.grid(row=0, column=1, padx=5)
         ttk.Button(
             top, text="Добавить цель",
             command=self.add_goal).grid(row=0, column=2)
 
+        # Создание прогресс бара цели
         self.goals_table = ttk.Treeview(
             f,
-            columns=("name", "target", "saved", "progress"), show="headings")
+            columns=("name", "target", "saved", "percent"),
+            show="headings", height=6)
 
-        for c in self.goals_table["columns"]:
-            self.goals_table.heading(c, text=c.capitalize())
+        self.goals_table.heading("name", text="Цель")
+        self.goals_table.heading("target", text="Цель ₽")
+        self.goals_table.heading("saved", text="Накоплено ₽")
+        self.goals_table.heading("percent", text="%")
+
         self.goals_table.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Обновление
+        self.goals_table.bind(
+            "<<TreeviewSelect>>",
+            self.on_goal_select)
+
+        # Под таблицей
+        self.goal_progress = ttk.Progressbar(
+            f,
+            orient="horizontal",
+            length=400,
+            mode="determinate"
+        )
+        self.goal_progress.pack(pady=5)
+
+        self.goal_progress_label = ttk.Label(f, text="Прогресс: 0%")
+        self.goal_progress_label.pack()
+
+        self.refresh_goals()
 
         ttk.Button(
             f, text="Пополнить выбранную цель",
             command=self.add_to_goal).pack(pady=5)
-        self.refresh_goals()
 
     def add_goal(self):
         try:
@@ -150,11 +174,27 @@ class CoinKeeperApp:
     def refresh_goals(self):
         for i in self.goals_table.get_children():
             self.goals_table.delete(i)
+
         for g in self.goals:
-            progress = round((g.saved / g.target) * 100, 1)
+            percent = round((g.saved / g.target) * 100, 1)
             self.goals_table.insert(
-                "", "end",
-                values=(g.name, g.target, g.saved, f"{progress}%"))
+                "",
+                "end",
+                values=(g.name, g.target, g.saved, f"{percent}%"))
+
+    def on_goal_select(self, event):
+        selected = self.goals_table.focus()
+        if not selected:
+            return
+
+        idx = self.goals_table.index(selected)
+        g = self.goals[idx]
+
+        percent = (g.saved / g.target) * 100
+        self.goal_progress["value"] = percent
+        self.goal_progress_label.config(
+            text=f"Прогресс: {round(percent, 1)}%"
+        )
 
 
 if __name__ == "__main__":
