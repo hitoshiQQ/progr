@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
@@ -6,8 +7,8 @@ from models import Record, Goal
 from storage import load_data, save_data
 from storage import load_archived_goals, save_archived_goals
 from goals import load_goals, save_goals
-from analytics import calculate_totals
-from charts import expenses_by_category
+# from analytics import calculate_totals
+# from charts import expenses_by_category
 
 
 class CoinKeeperApp:
@@ -41,36 +42,80 @@ class CoinKeeperApp:
     # -------- ФИНАНСЫ --------
     def build_finance_tab(self):
         f = self.finance_tab
-        top = ttk.Frame(f)
-        top.pack(pady=10)
+        # =======================
+        # ➕ Новая операция
+        # =======================
+        add_frame = ttk.LabelFrame(f, text="➕ Новая операция", padding=10)
+        add_frame.pack(fill="x", padx=15, pady=10)
 
+        ttk.Label(add_frame, text="Тип:").grid(row=0, column=0, padx=5)
         self.type_var = tk.StringVar(value="Расход")
         ttk.Combobox(
-            top, textvariable=self.type_var,
-            values=["Доход", "Расход"], width=10).grid(row=0, column=0)
+            add_frame,
+            textvariable=self.type_var,
+            values=["Доход", "Расход"],
+            state="readonly",
+            width=10
+        ).grid(row=0, column=1, padx=5)
 
-        self.category = ttk.Entry(top, width=20)
-        self.category.grid(row=0, column=1, padx=5)
-        self.amount = ttk.Entry(top, width=10)
-        self.amount.grid(row=0, column=2, padx=5)
+        ttk.Label(add_frame, text="Категория:").grid(row=0, column=2, padx=5)
+        self.category = ttk.Entry(add_frame, width=20)
+        self.category.grid(row=0, column=3, padx=5)
+
+        ttk.Label(add_frame, text="Сумма ₽:").grid(row=0, column=4, padx=5)
+        self.amount = ttk.Entry(add_frame, width=10)
+        self.amount.grid(row=0, column=5, padx=5)
+
         ttk.Button(
-            top, text="Добавить",
-            command=self.add_record).grid(row=0, column=3)
+            add_frame,
+            text="✔ Добавить",
+            command=self.add_record
+        ).grid(row=0, column=6, padx=10)
 
         ttk.Button(
-            top, text="График", command=lambda:
-            expenses_by_category(self.records)).grid(row=0, column=4)
+            add_frame,
+            text="📊 График",
+            command=self.show_chart
+        ).grid(row=0, column=7, padx=5)
 
-        self.table = ttk.Treeview(
-            f,
-            columns=("date", "type", "category", "amount"), show="headings")
+        # =======================
+        # 📋 История операций
+        # =======================
+        table_frame = ttk.LabelFrame(f, text="📋 История операций", padding=10)
+        table_frame.pack(fill="both", expand=True, padx=15, pady=5)
 
-        for c in self.table["columns"]:
-            self.table.heading(c, text=c.capitalize())
-        self.table.pack(fill="both", expand=True, padx=10, pady=10)
+        self.finance_table = ttk.Treeview(
+            table_frame,
+            columns=("date", "type", "category", "amount"),
+            show="headings",
+            height=10
+        )
 
-        self.total_label = ttk.Label(f, font=("Arial", 12, "bold"))
-        self.total_label.pack()
+        self.finance_table.heading("date", text="Дата")
+        self.finance_table.heading("type", text="Тип")
+        self.finance_table.heading("category", text="Категория")
+        self.finance_table.heading("amount", text="Сумма ₽")
+
+        self.finance_table.column("date", width=100, anchor="center")
+        self.finance_table.column("type", width=80, anchor="center")
+        self.finance_table.column("category", width=220)
+        self.finance_table.column("amount", width=120, anchor="e")
+
+        self.finance_table.pack(fill="both", expand=True)
+
+        # =======================
+        # 📊 Итоги
+        # =======================
+        summary = ttk.LabelFrame(f, text="📊 Итоги", padding=10)
+        summary.pack(fill="x", padx=15, pady=10)
+
+        self.summary_label = ttk.Label(
+            summary,
+            text="Доходы: 0 ₽   Расходы: 0 ₽   Баланс: 0 ₽",
+            font=("Segoe UI", 10, "bold")
+        )
+        self.summary_label.pack(anchor="center")
+
         self.refresh_finance()
 
     def add_record(self):
@@ -92,17 +137,65 @@ class CoinKeeperApp:
             messagebox.showerror("Ошибка", "Некорректные данные")
 
     def refresh_finance(self):
-        for i in self.table.get_children():
-            self.table.delete(i)
+        for i in self.finance_table.get_children():
+            self.finance_table.delete(i)
+
+        income = expense = 0
+
         for r in self.records:
             sign = "+" if r.type == "Доход" else "-"
-            self.table.insert(
-                "", "end",
-                values=(r.date, r.type, r.category, f"{sign}{r.amount} ₽"))
+            amount = r.amount
 
-        inc, exp, bal = calculate_totals(self.records)
-        self.total_label.config(
-            text=f"Доходы: {inc} ₽  Расходы: {exp} ₽  Баланс: {bal} ₽")
+            if r.type == "Доход":
+                income += amount
+            else:
+                expense += amount
+
+            self.finance_table.insert(
+                "",
+                "end",
+                values=(
+                    r.date,
+                    r.type,
+                    r.category,
+                    f"{sign}{amount:.2f} ₽"
+                )
+            )
+
+        balance = income - expense
+        self.summary_label.config(
+            text=f"Доходы: {income:.2f} ₽   Расходы: {expense:.2f} ₽   Баланс: {balance:.2f} ₽"
+        )
+
+    def show_chart(self):
+        if not self.records:
+            messagebox.showinfo("График", "Нет данных для построения графика")
+            return
+
+        income = {}
+        expense = {}
+
+        for r in self.records:
+            if r.type == "Доход":
+                income[r.category] = income.get(r.category, 0) + r.amount
+            else:
+                expense[r.category] = expense.get(r.category, 0) + r.amount
+
+        if income:
+            plt.figure()
+            plt.title("Доходы по категориям")
+            plt.bar(income.keys(), income.values())
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            plt.show()
+
+        if expense:
+            plt.figure()
+            plt.title("Расходы по категориям")
+            plt.bar(expense.keys(), expense.values())
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            plt.show()
 
     # -------- ЦЕЛИ --------
     def build_goals_tab(self):
