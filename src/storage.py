@@ -1,6 +1,7 @@
 import json
 import os
 from models import Record
+from models import Goal
 
 
 DATA_FILE = "data.json"

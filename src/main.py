@@ -107,58 +107,89 @@ class CoinKeeperApp:
     # -------- ЦЕЛИ --------
     def build_goals_tab(self):
         f = self.goals_tab
-        top = ttk.Frame(f)
-        top.pack(pady=10)
+        # =======================
+        # 🏁 Блок добавления цели
+        # =======================
+        add_frame = ttk.LabelFrame(f, text="🏁 Новая цель", padding=10)
+        add_frame.pack(fill="x", padx=15, pady=10)
 
-        self.goal_name = ttk.Entry(top, width=20)
-        self.goal_name.grid(row=0, column=0, padx=5)
+        ttk.Label(add_frame, text="Название:").grid(row=0, column=0, padx=5)
+        self.goal_name = ttk.Entry(add_frame, width=25)
+        self.goal_name.grid(row=0, column=1, padx=5)
 
-        self.goal_target = ttk.Entry(top, width=10)
-        self.goal_target.grid(row=0, column=1, padx=5)
-
-        # Кнопки
-        ttk.Button(
-            top, text="Добавить цель",
-            command=self.add_goal).grid(row=0, column=2)
-
-        ttk.Button(
-            f, text="Пополнить выбранную цель",
-            command=self.add_to_goal).pack(pady=5)
+        ttk.Label(add_frame, text="Сумма ₽:").grid(row=0, column=2, padx=5)
+        self.goal_target = ttk.Entry(add_frame, width=12)
+        self.goal_target.grid(row=0, column=3, padx=5)
 
         ttk.Button(
-            f,
-            text="Удалить выбранную цель",
-            command=self.delete_goal
-        ).pack(pady=5)
+            add_frame,
+            text="➕ Добавить цель",
+            command=self.add_goal
+        ).grid(row=0, column=4, padx=10)
 
-        # Создание прогресс бара цели
+        # =======================
+        # 📋 Таблица целей
+        # =======================
+        table_frame = ttk.LabelFrame(f, text="📋 Активные цели", padding=10)
+        table_frame.pack(fill="both", expand=True, padx=15, pady=5)
+
         self.goals_table = ttk.Treeview(
-            f,
+            table_frame,
             columns=("name", "target", "saved", "percent"),
-            show="headings", height=6)
+            show="headings",
+            height=8
+        )
 
         self.goals_table.heading("name", text="Цель")
         self.goals_table.heading("target", text="Цель ₽")
         self.goals_table.heading("saved", text="Накоплено ₽")
         self.goals_table.heading("percent", text="%")
 
-        self.goals_table.pack(fill="both", expand=True, padx=10, pady=10)
+        self.goals_table.column("name", width=200)
+        self.goals_table.column("target", width=100, anchor="center")
+        self.goals_table.column("saved", width=120, anchor="center")
+        self.goals_table.column("percent", width=80, anchor="center")
 
-        # Обновление
-        self.goals_table.bind(
-            "<<TreeviewSelect>>",
-            self.on_goal_select)
+        self.goals_table.pack(fill="both", expand=True)
 
-        # Под таблицей
+        self.goals_table.bind("<<TreeviewSelect>>", self.on_goal_select)
+
+        # =======================
+        # 🎛 Кнопки действий
+        # =======================
+        actions = ttk.Frame(f)
+        actions.pack(pady=5)
+
+        ttk.Button(
+            actions,
+            text="💰 Пополнить",
+            command=self.add_to_goal
+        ).grid(row=0, column=0, padx=5)
+
+        ttk.Button(
+            actions,
+            text="🗑 Удалить",
+            command=self.delete_goal
+        ).grid(row=0, column=1, padx=5)
+
+        # =======================
+        # 📊 Прогресс
+        # =======================
+        progress_frame = ttk.LabelFrame(f, text="📊 Прогресс цели", padding=10)
+        progress_frame.pack(fill="x", padx=15, pady=10)
+
         self.goal_progress = ttk.Progressbar(
-            f,
+            progress_frame,
             orient="horizontal",
-            length=400,
             mode="determinate"
         )
-        self.goal_progress.pack(pady=5)
+        self.goal_progress.pack(fill="x", padx=5, pady=5)
 
-        self.goal_progress_label = ttk.Label(f, text="Прогресс: 0%")
+        self.goal_progress_label = ttk.Label(
+            progress_frame,
+            text="Прогресс: 0%",
+            anchor="center"
+        )
         self.goal_progress_label.pack()
 
         self.refresh_goals()
