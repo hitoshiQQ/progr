@@ -181,20 +181,30 @@ class CoinKeeperApp:
             else:
                 expense[r.category] = expense.get(r.category, 0) + r.amount
 
+        # График доходов (круг)
         if income:
             plt.figure()
             plt.title("Доходы по категориям")
-            plt.bar(income.keys(), income.values())
-            plt.xticks(rotation=45)
-            plt.tight_layout()
+            plt.pie(
+                income.values(),
+                labels=income.keys(),
+                autopct="%1.1f%%",  # отображение процентов
+                startangle=90
+            )
+            plt.axis("equal")  # делает круг ровным
             plt.show()
 
+        # График расходов (круг)
         if expense:
             plt.figure()
             plt.title("Расходы по категориям")
-            plt.bar(expense.keys(), expense.values())
-            plt.xticks(rotation=45)
-            plt.tight_layout()
+            plt.pie(
+                expense.values(),
+                labels=expense.keys(),
+                autopct="%1.1f%%",
+                startangle=90
+            )
+            plt.axis("equal")
             plt.show()
 
     # -------- ЦЕЛИ --------
