@@ -4,6 +4,7 @@ from datetime import datetime
 
 from models import Record, Goal
 from storage import load_data, save_data
+from storage import load_archived_goals, save_archived_goals
 from goals import load_goals, save_goals
 from analytics import calculate_totals
 from charts import expenses_by_category
@@ -15,20 +16,27 @@ class CoinKeeperApp:
         self.root.title("Coin Keeper")
         self.root.geometry("900x550")
 
+        # Данные
         self.records = load_data()
         self.goals = load_goals()
+        self.archived_goals = load_archived_goals()
 
-        notebook = ttk.Notebook(root)
-        notebook.pack(fill="both", expand=True)
+        # notebook как self
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill="both", expand=True)
 
-        self.finance_tab = ttk.Frame(notebook)
-        self.goals_tab = ttk.Frame(notebook)
+        # вкладки
+        self.finance_tab = ttk.Frame(self.notebook)
+        self.goals_tab = ttk.Frame(self.notebook)
+        self.archive_tab = ttk.Frame(self.notebook)
 
-        notebook.add(self.finance_tab, text="Финансы")
-        notebook.add(self.goals_tab, text="Цели")
+        self.notebook.add(self.finance_tab, text="Финансы")
+        self.notebook.add(self.goals_tab, text="Цели")
+        self.notebook.add(self.archive_tab, text="🏆 Архив целей")
 
         self.build_finance_tab()
         self.build_goals_tab()
+        self.build_archive_tab()
 
     # -------- ФИНАНСЫ --------
     def build_finance_tab(self):
@@ -155,6 +163,22 @@ class CoinKeeperApp:
 
         self.refresh_goals()
 
+    def build_archive_tab(self):
+        self.archive_table = ttk.Treeview(
+            self.archive_tab,
+            columns=("name", "target", "saved"),
+            show="headings",
+            height=8
+        )
+
+        self.archive_table.heading("name", text="Цель")
+        self.archive_table.heading("target", text="Цель ₽")
+        self.archive_table.heading("saved", text="Накоплено ₽")
+
+        self.archive_table.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.refresh_archive()
+
     def add_goal(self):
         try:
             target = float(self.goal_target.get())
@@ -183,9 +207,14 @@ class CoinKeeperApp:
         ):
             return
 
-        self.goals.pop(idx)
+        goal = self.goals.pop(idx)
+        self.archived_goals.append(goal)
+
         save_goals(self.goals)
+        save_archived_goals(self.archived_goals)
+
         self.refresh_goals()
+        self.refresh_archive()
 
         self.goal_progress["value"] = 0
         self.goal_progress_label.config(text="Прогресс: 0%")
@@ -202,16 +231,19 @@ class CoinKeeperApp:
             self.goals[idx].saved += amount
 
         if self.goals[idx].saved >= self.goals[idx].target:
+            goal = self.goals.pop(idx)
+            self.archived_goals.append(goal)
+
             messagebox.showinfo(
                 "Цель достигнута 🎉",
-                f"Цель «{self.goals[idx].name}» достигнута!"
+                f"Цель «{goal.name}» достигнута и отправлена в архив"
             )
-            self.goals.pop(idx)
-        else:
-            save_goals(self.goals)
 
         save_goals(self.goals)
+        save_archived_goals(self.archived_goals)
+
         self.refresh_goals()
+        self.refresh_archive()
 
         self.goal_progress["value"] = 0
         self.goal_progress_label.config(text="Прогресс: 0%")
@@ -226,6 +258,17 @@ class CoinKeeperApp:
                 "",
                 "end",
                 values=(g.name, g.target, g.saved, f"{percent}%"))
+
+    def refresh_archive(self):
+        for i in self.archive_table.get_children():
+            self.archive_table.delete(i)
+
+        for g in self.archived_goals:
+            self.archive_table.insert(
+                "",
+                "end",
+                values=(g.name, g.target, g.saved)
+            )
 
     def on_goal_select(self, event):
         selected = self.goals_table.focus()

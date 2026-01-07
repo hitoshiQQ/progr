@@ -19,3 +19,18 @@ def save_data(records):
         json.dump(
             [r.__dict__ for r in records], f,
             ensure_ascii=False, indent=2)
+
+
+ARCHIVE_FILE = "goals_archive.json"
+
+
+def load_archived_goals():
+    if not os.path.exists(ARCHIVE_FILE):
+        return []
+    with open(ARCHIVE_FILE, "r", encoding="utf-8") as f:
+        return [Goal(**g) for g in json.load(f)]
+
+
+def save_archived_goals(goals):
+    with open(ARCHIVE_FILE, "w", encoding="utf-8") as f:
+        json.dump([g.__dict__ for g in goals], f, ensure_ascii=False, indent=2)
