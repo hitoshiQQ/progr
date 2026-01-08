@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
+from datetime import date
 
 from models import Record, Goal
 from storage import load_data, save_data
@@ -300,7 +301,7 @@ class CoinKeeperApp:
     def build_archive_tab(self):
         self.archive_table = ttk.Treeview(
             self.archive_tab,
-            columns=("name", "target", "saved"),
+            columns=("name", "target", "saved", "date"),
             show="headings",
             height=8
         )
@@ -308,6 +309,7 @@ class CoinKeeperApp:
         self.archive_table.heading("name", text="Цель")
         self.archive_table.heading("target", text="Цель ₽")
         self.archive_table.heading("saved", text="Накоплено ₽")
+        self.archive_table.heading("date", text="Дата завершения")
 
         self.archive_table.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -366,6 +368,7 @@ class CoinKeeperApp:
 
         if self.goals[idx].saved >= self.goals[idx].target:
             goal = self.goals.pop(idx)
+            goal.completed_date = date.today().strftime("%d.%m.%Y")
             self.archived_goals.append(goal)
 
             messagebox.showinfo(
@@ -401,7 +404,7 @@ class CoinKeeperApp:
             self.archive_table.insert(
                 "",
                 "end",
-                values=(g.name, g.target, g.saved)
+                values=(g.name, g.target, g.saved, g.completed_date or "-")
             )
 
     def on_goal_select(self, event):

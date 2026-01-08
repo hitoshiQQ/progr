@@ -1,7 +1,8 @@
 [
   {
-    "name": "Машина",
-    "target": 10000.0,
-    "saved": 10000.0
+    "name": "Бибика",
+    "target": 1.0,
+    "saved": 1.0,
+    "completed_date": "09.01.2026"
   }
 ]
