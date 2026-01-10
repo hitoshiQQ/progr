@@ -19,7 +19,12 @@ class CoinKeeperApp:
         self.root.geometry("900x550")
 
         # Данные
-        self.records = load_data()
+        self.all_records = load_data()   # Все данные
+        self.records = []                # Текущий месяц
+        self.monthly_archive = {}        # Архив месяцев
+
+        self.split_records_by_month()
+
         self.goals = load_goals()
         self.archived_goals = load_archived_goals()
 
@@ -31,14 +36,82 @@ class CoinKeeperApp:
         self.finance_tab = ttk.Frame(self.notebook)
         self.goals_tab = ttk.Frame(self.notebook)
         self.archive_tab = ttk.Frame(self.notebook)
+        self.finance_archive_tab = ttk.Frame(self.notebook)
 
         self.notebook.add(self.finance_tab, text="Финансы")
         self.notebook.add(self.goals_tab, text="Цели")
         self.notebook.add(self.archive_tab, text="🏆 Архив целей")
+        self.notebook.add(self.finance_archive_tab, text="📁 Архив финансов")
 
         self.build_finance_tab()
         self.build_goals_tab()
         self.build_archive_tab()
+        self.build_finance_archive_tab()
+
+    # -------- СПЛИТ ПО МЕСЯЦАМ --------
+    def split_records_by_month(self):
+        self.records.clear()
+        self.monthly_archive.clear()
+
+        current_month = date.today().strftime("%Y-%m")
+
+        for r in self.all_records:
+            record_month = r.date[:7]  # YYYY-MM
+
+            if record_month == current_month:
+                self.records.append(r)
+            else:
+                self.monthly_archive.setdefault(record_month, []).append(r)
+
+    def build_finance_archive_tab(self):
+        f = self.finance_archive_tab
+
+        self.archive_table = ttk.Treeview(
+            f,
+            columns=("month", "income", "expense", "result"),
+            show="headings"
+        )
+
+        self.archive_table.heading("month", text="Месяц")
+        self.archive_table.heading("income", text="Доход ₽")
+        self.archive_table.heading("expense", text="Расход ₽")
+        self.archive_table.heading("result", text="Итог ₽")
+
+        self.archive_table.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.refresh_finance_archive()
+
+    def refresh_finance_archive(self):
+        for i in self.archive_table.get_children():
+            self.archive_table.delete(i)
+
+        for month, records in sorted(self.monthly_archive.items(), reverse=True):
+            income = sum(r.amount for r in records if r.type == "Доход")
+            expense = sum(r.amount for r in records if r.type == "Расход")
+
+            self.archive_table.insert(
+                "",
+                "end",
+                values=(
+                    month,
+                    f"{income:.2f}",
+                    f"{expense:.2f}",
+                    f"{income - expense:.2f}"
+                )
+            )
+
+    def show_month_records(self, event=None):
+        month = self.months_list.get()
+
+        for i in self.archive_table.get_children():
+            self.archive_table.delete(i)
+
+        for r in self.monthly_archive.get(month, []):
+            self.archive_table.insert(
+                "",
+                "end",
+                values=(r.date, r.type, r.amount, r.category)
+            )
 
     # -------- ФИНАНСЫ --------
     def build_finance_tab(self):
@@ -124,16 +197,31 @@ class CoinKeeperApp:
             amt = float(self.amount.get())
             if amt <= 0 or not self.category.get():
                 raise ValueError
-            self.records.append(Record(
-                date=datetime.now().strftime("%d.%m.%Y"),
+
+            record = Record(
+                date=datetime.now().strftime("%Y-%m-%d"),
                 type=self.type_var.get(),
                 category=self.category.get(),
                 amount=amt
-            ))
-            save_data(self.records)
+            )
+
+            # Добавляем ТОЛЬКО в all_records
+            self.all_records.append(record)
+
+            # Сохраняем ВСЕ данные
+            save_data(self.all_records)
+
+            # Пересобираем месяц + архив
+            self.split_records_by_month()
+
+            # Обновляем интерфейс
             self.refresh_finance()
+            self.refresh_finance_archive()
+
+            # Очистка полей
             self.category.delete(0, tk.END)
             self.amount.delete(0, tk.END)
+
         except ValueError:
             messagebox.showerror("Ошибка", "Некорректные данные")
 
