@@ -387,19 +387,19 @@ class CoinKeeperApp:
         self.refresh_goals()
 
     def build_archive_tab(self):
-        self.archive_table = ttk.Treeview(
+        self.goals_archive_table = ttk.Treeview(
             self.archive_tab,
             columns=("name", "target", "saved", "date"),
             show="headings",
             height=8
         )
 
-        self.archive_table.heading("name", text="Цель")
-        self.archive_table.heading("target", text="Цель ₽")
-        self.archive_table.heading("saved", text="Накоплено ₽")
-        self.archive_table.heading("date", text="Дата завершения")
+        self.goals_archive_table.heading("name", text="Цель")
+        self.goals_archive_table.heading("target", text="Цель ₽")
+        self.goals_archive_table.heading("saved", text="Накоплено ₽")
+        self.goals_archive_table.heading("date", text="Дата завершения")
 
-        self.archive_table.pack(fill="both", expand=True, padx=10, pady=10)
+        self.goals_archive_table.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.refresh_archive()
 
@@ -485,11 +485,11 @@ class CoinKeeperApp:
                 values=(g.name, g.target, g.saved, f"{percent}%"))
 
     def refresh_archive(self):
-        for i in self.archive_table.get_children():
-            self.archive_table.delete(i)
+        for i in self.goals_archive_table.get_children():
+            self.goals_archive_table.delete(i)
 
         for g in self.archived_goals:
-            self.archive_table.insert(
+            self.goals_archive_table.insert(
                 "",
                 "end",
                 values=(g.name, g.target, g.saved, g.completed_date or "-")
