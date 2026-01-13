@@ -229,16 +229,18 @@ class CoinKeeperApp:
         for i in self.finance_table.get_children():
             self.finance_table.delete(i)
 
-        income = expense = 0
+        # --- Текущий месяц ---
+        month_income = 0
+        month_expense = 0
 
         for r in self.records:
             sign = "+" if r.type == "Доход" else "-"
             amount = r.amount
 
             if r.type == "Доход":
-                income += amount
+                month_income += amount
             else:
-                expense += amount
+                month_expense += amount
 
             self.finance_table.insert(
                 "",
@@ -251,9 +253,24 @@ class CoinKeeperApp:
                 )
             )
 
-        balance = income - expense
+        # ---Баланс за все время---
+        total_income = 0
+        total_expense = 0
+
+        for r in self.all_records:
+            if r.type == "Доход":
+                total_income += r.amount
+            else:
+                total_expense += r.amount
+
+        total_balance = total_income - total_expense
+
         self.summary_label.config(
-            text=f"Доходы: {income:.2f} ₽   Расходы: {expense:.2f} ₽   Баланс: {balance:.2f} ₽"
+            text=(
+                f"Доходы (мес): {month_income:.2f} ₽   "
+                f"Расходы (мес): {month_expense:.2f} ₽   "
+                f"Баланс: {total_balance:.2f} ₽"
+            )
         )
 
     def show_chart(self):
