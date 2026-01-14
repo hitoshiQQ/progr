@@ -3,7 +3,7 @@ import os
 from models import Record
 from models import Goal
 
-
+# -------- ДАННЫЕ --------
 DATA_FILE = "data.json"
 
 
@@ -22,6 +22,7 @@ def save_data(records):
             ensure_ascii=False, indent=2)
 
 
+# --------АРХИВ --------
 ARCHIVE_FILE = "goals_archive.json"
 
 
@@ -35,3 +36,23 @@ def load_archived_goals():
 def save_archived_goals(goals):
     with open(ARCHIVE_FILE, "w", encoding="utf-8") as f:
         json.dump([g.__dict__ for g in goals], f, ensure_ascii=False, indent=2)
+
+
+# -------- КАТЕГОРИИ --------
+CATEGORIES_FILE = "categories.json"
+
+
+def load_categories():
+    if not os.path.exists(CATEGORIES_FILE):
+        return {
+            "Доход": ["Зарплата", "Подработка", "Выплаты"],
+            "Расход": ["Еда", "Машина", "Кредиты", "Коммуналка"]
+        }
+
+    with open(CATEGORIES_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_categories(categories):
+    with open(CATEGORIES_FILE, "w", encoding="uft-8") as f:
+        json.dump(categories, f, ensure_ascii=False, indent=2)

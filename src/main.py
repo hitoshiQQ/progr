@@ -9,6 +9,7 @@ from storage import load_data, save_data
 from storage import load_archived_goals, save_archived_goals
 from goals import load_goals, save_goals
 from analytics import calculate_totals
+from storage import load_categories, save_categories
 # from analytics import calculate_totals
 # from charts import expenses_by_category
 
@@ -28,6 +29,8 @@ class CoinKeeperApp:
 
         self.goals = load_goals()
         self.archived_goals = load_archived_goals()
+
+        self.categories = load_categories()
 
         # notebook как self
         self.notebook = ttk.Notebook(self.root)
@@ -117,6 +120,33 @@ class CoinKeeperApp:
                 values=(r.date, r.type, r.amount, r.category)
             )
 
+    # -------- КАТЕГОРИИ --------
+    def update_category_list(self, *_):
+        t = self.type_var.get()
+        self.category["values"] = self.categories.get(t, [])
+        self.category.set("")
+
+    def add_category(self):
+        new_cat = simpledialog.askstring(
+            "Новая категория",
+            "Введите название категории:"
+        )
+
+        if not new_cat:
+            return
+
+        t = self.type_var.get()
+
+        if new_cat in self.categories[t]:
+            messagebox.showinfo("Инфо", "Такая категория уже существует")
+            return
+
+        self.categories[t].append(new_cat)
+        save_categories(self.categories)
+
+        self.update_category_list()
+        self.category.set(new_cat)
+
     # -------- ФИНАНСЫ --------
     def build_finance_tab(self):
         f = self.finance_tab
@@ -128,33 +158,47 @@ class CoinKeeperApp:
 
         ttk.Label(add_frame, text="Тип:").grid(row=0, column=0, padx=5)
         self.type_var = tk.StringVar(value="Расход")
-        ttk.Combobox(
+
+        type_combo = ttk.Combobox(
             add_frame,
             textvariable=self.type_var,
             values=["Доход", "Расход"],
             state="readonly",
             width=10
-        ).grid(row=0, column=1, padx=5)
+        )
+        type_combo.grid(row=0, column=1, padx=5)
+        self.type_var.trace_add("write", self.update_category_list)
 
         ttk.Label(add_frame, text="Категория:").grid(row=0, column=2, padx=5)
-        self.category = ttk.Entry(add_frame, width=20)
+        self.category = ttk.Combobox(
+            add_frame,
+            values=self.categories[self.type_var.get()],
+            width=18
+        )
         self.category.grid(row=0, column=3, padx=5)
 
-        ttk.Label(add_frame, text="Сумма ₽:").grid(row=0, column=4, padx=5)
+        ttk.Button(
+            add_frame,
+            text="➕",
+            width=3,
+            command=self.add_category
+        ).grid(row=0, column=4, padx=3)
+
+        ttk.Label(add_frame, text="Сумма ₽:").grid(row=0, column=5, padx=5)
         self.amount = ttk.Entry(add_frame, width=10)
-        self.amount.grid(row=0, column=5, padx=5)
+        self.amount.grid(row=0, column=6, padx=5)
 
         ttk.Button(
             add_frame,
             text="✔ Добавить",
             command=self.add_record
-        ).grid(row=0, column=6, padx=10)
+        ).grid(row=0, column=7, padx=10)
 
         ttk.Button(
             add_frame,
             text="📊 График",
             command=self.show_chart
-        ).grid(row=0, column=7, padx=5)
+        ).grid(row=0, column=8, padx=5)
 
         # =======================
         # 🔎 Фильтры
@@ -604,7 +648,7 @@ class CoinKeeperApp:
             text=f"Прогресс: {round(percent, 1)}%"
         )
 
-    # -------- ПАРСЕР ДАТ --------
+    # -------- ПАРСЕРЫ --------
     def parse_date(self, date_str):
         for fmt in ("%d.%m.%Y", "%Y-%m-%d"):
             try:
