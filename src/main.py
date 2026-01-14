@@ -8,6 +8,7 @@ from models import Record, Goal
 from storage import load_data, save_data
 from storage import load_archived_goals, save_archived_goals
 from goals import load_goals, save_goals
+from analytics import calculate_totals
 # from analytics import calculate_totals
 # from charts import expenses_by_category
 
@@ -85,7 +86,10 @@ class CoinKeeperApp:
         for i in self.archive_table.get_children():
             self.archive_table.delete(i)
 
-        for month, records in sorted(self.monthly_archive.items(), reverse=True):
+        for month, records in sorted(
+            self.monthly_archive.items(),
+            reverse=True
+        ):
             income = sum(r.amount for r in records if r.type == "Доход")
             expense = sum(r.amount for r in records if r.type == "Расход")
 
@@ -151,6 +155,48 @@ class CoinKeeperApp:
             text="📊 График",
             command=self.show_chart
         ).grid(row=0, column=7, padx=5)
+
+        # =======================
+        # 🔎 Фильтры
+        # =======================
+        filter_frame = ttk.LabelFrame(f, text="🔎 Фильтр", padding=10)
+        filter_frame.pack(fill="x", padx=15, pady=5)
+
+        ttk.Label(filter_frame, text="Дата с:").grid(row=0, column=0, padx=5)
+        self.filter_date_from = ttk.Entry(filter_frame, width=12)
+        self.filter_date_from.grid(row=0, column=1, padx=5)
+
+        ttk.Label(filter_frame, text="по:").grid(row=0, column=2)
+        self.filter_date_to = ttk.Entry(filter_frame, width=12)
+        self.filter_date_to.grid(row=0, column=3, padx=5)
+
+        ttk.Label(filter_frame, text="Тип:").grid(row=0, column=4, padx=5)
+        self.filter_type = tk.StringVar(value="Все")
+        ttk.Combobox(
+            filter_frame,
+            textvariable=self.filter_type,
+            values=["Все", "Доход", "Расход"],
+            state="readonly",
+            width=10
+        ).grid(row=0, column=5, padx=5)
+
+        ttk.Label(filter_frame, text="Категория:").grid(
+            row=0, column=6, padx=5
+        )
+        self.filter_category = ttk.Entry(filter_frame, width=15)
+        self.filter_category.grid(row=0, column=7, padx=5)
+
+        ttk.Button(
+            filter_frame,
+            text="Применить",
+            command=self.refresh_finance
+        ).grid(row=0, column=8, padx=10)
+
+        ttk.Button(
+            filter_frame,
+            text="Сброс",
+            command=self.reset_filters
+        ).grid(row=0, column=9)
 
         # =======================
         # 📋 История операций
@@ -229,19 +275,47 @@ class CoinKeeperApp:
         for i in self.finance_table.get_children():
             self.finance_table.delete(i)
 
-        # --- Текущий месяц ---
-        month_income = 0
-        month_expense = 0
+        filtered = self.records
 
-        for r in self.records:
+        # --- фильтр по типу ---
+        if self.filter_type.get() != "Все":
+            filtered = [
+                r for r in filtered
+                if r.type == self.filter_type.get()
+            ]
+
+        # --- фильтр по категории ---
+        if self.filter_category.get():
+            filtered = [
+                r for r in filtered
+                if self.filter_category.get().lower() in r.category.lower()
+            ]
+
+        # --- фильтр по дате ---
+        try:
+            if self.filter_date_from.get():
+                date_from = self.parse_date(self.filter_date_from.get())
+                filtered = [
+                    r for r in filtered
+                    if self.parse_date(r.date) >= date_from
+                ]
+
+            if self.filter_date_to.get():
+                date_to = self.parse_date(self.filter_date_to.get())
+                filtered = [
+                    r for r in filtered
+                    if self.parse_date(r.date) <= date_to
+                ]
+        except ValueError:
+            messagebox.showerror(
+                "Ошибка",
+                "Дата должна быть в формате ДД.ММ.ГГГГ"
+            )
+            return
+
+        # --- вывод таблицы ---
+        for r in filtered:
             sign = "+" if r.type == "Доход" else "-"
-            amount = r.amount
-
-            if r.type == "Доход":
-                month_income += amount
-            else:
-                month_expense += amount
-
             self.finance_table.insert(
                 "",
                 "end",
@@ -249,21 +323,13 @@ class CoinKeeperApp:
                     r.date,
                     r.type,
                     r.category,
-                    f"{sign}{amount:.2f} ₽"
+                    f"{sign}{r.amount:.2f} ₽"
                 )
             )
 
-        # ---Баланс за все время---
-        total_income = 0
-        total_expense = 0
-
-        for r in self.all_records:
-            if r.type == "Доход":
-                total_income += r.amount
-            else:
-                total_expense += r.amount
-
-        total_balance = total_income - total_expense
+        # --- итоги (месяц / всё время) ---
+        month_income, month_expense, _ = calculate_totals(self.records)
+        total_income, total_expense, total_balance = calculate_totals(self.all_records)
 
         self.summary_label.config(
             text=(
@@ -312,6 +378,13 @@ class CoinKeeperApp:
             )
             plt.axis("equal")
             plt.show()
+
+    def reset_filters(self):
+        self.filter_date_from.delete(0, tk.END)
+        self.filter_date_to.delete(0, tk.END)
+        self.filter_category.delete(0, tk.END)
+        self.filter_type.set("Все")
+        self.refresh_finance()
 
     # -------- ЦЕЛИ --------
     def build_goals_tab(self):
@@ -416,7 +489,12 @@ class CoinKeeperApp:
         self.goals_archive_table.heading("saved", text="Накоплено ₽")
         self.goals_archive_table.heading("date", text="Дата завершения")
 
-        self.goals_archive_table.pack(fill="both", expand=True, padx=10, pady=10)
+        self.goals_archive_table.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=10
+        )
 
         self.refresh_archive()
 
@@ -525,6 +603,15 @@ class CoinKeeperApp:
         self.goal_progress_label.config(
             text=f"Прогресс: {round(percent, 1)}%"
         )
+
+    # -------- ПАРСЕР ДАТ --------
+    def parse_date(self, date_str):
+        for fmt in ("%d.%m.%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(date_str.strip(), fmt)
+            except ValueError:
+                continue
+        raise ValueError
 
 
 if __name__ == "__main__":
