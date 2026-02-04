@@ -107,6 +107,66 @@ class CoinKeeperApp:
         self.build_archive_tab()
         self.build_finance_archive_tab()
 
+    # -------- СЛУЖЕБНЫЕ ФУНКЦИИ --------
+    def toggle_settings_panel(self):
+        if self.settings_visiable:
+            self.settings_panel.place_forget()
+        else:
+            self.settings_panel.place(
+                relx=1.0,
+                y=0,
+                anchor="ne",
+                height=self.root.winfo_height()
+            )
+        self.settings_visiable = not self.settings_visiable
+
+    def apply_theme(self):
+        style = ttk.Style()
+
+        if self.theme_var.get() == "dark":
+            self.root.configure(bg="#1e1e1e")
+
+            style.configure(
+                "TFrame",
+                background="#1e1e1e"
+            )
+            style.configure(
+                "TLabel",
+                background="#1e1e1e",
+                foreground="white"
+            )
+            style.configure(
+                "Treeview",
+                background="#2b2b2b",
+                foreground="white",
+                fieldbackground="#2b2b2b"
+            )
+            style.configure(
+                "Treeview.Heading",
+                background="#3a3a3a",
+                foreground="white"
+            )
+
+        else:
+            self.root.configure(bg="#f5f5f5")
+
+            style.configure("TFrame", background="#f5f5f5")
+            style.configure("TLabel", background="#f5f5f5", foreground="black")
+            style.configure(
+                "Treeview",
+                background="white",
+                foreground="black",
+                fieldbackground="white"
+            )
+            style.configure(
+                "Treeview.Heading",
+                background="#eaeaea",
+                foreground="black"
+            )
+
+    def apply_resolution(self):
+        self.root.geometry(self.resolution_var.get())
+
     # -------- СПЛИТ ПО МЕСЯЦАМ --------
     def split_records_by_month(self):
         self.records.clear()
@@ -397,6 +457,91 @@ class CoinKeeperApp:
             foreground="#636e72"
         )
         self.summary_sub.pack()
+
+        # =======================
+        # Настройки
+        # =======================
+        top_bar = ttk.Frame(f)
+        top_bar.pack(fill="x", padx=10, pady=5)
+
+        ttk.Label(
+            top_bar,
+            text="💰 CoinKeeper",
+            font=("Segoe UI", 14, "bold")
+        ).pack(side="left")
+
+        ttk.Button(
+            top_bar,
+            text="⚙",
+            width=3,
+            command=self.toggle_settings_panel
+        ).pack(side="right")
+
+        # =======================
+        # Панель Настройки
+        # =======================
+        self.settings_panel = ttk.Frame(
+            self.root,
+            width=260,
+            relief="ridge",
+            padding=10
+        )
+        self.settings_visiable = False
+
+        ttk.Label(
+            self.settings_panel,
+            text="⚙ Настройки",
+            font=("Segoe UI", 12, "bold")
+        ).pack(pady=(0, 10))
+
+        # Тема
+        ttk.Label(self.settings_panel, text="Тема:").pack(anchor="w")
+
+        self.theme_var = tk.StringVar(value="light")
+
+        ttk.Radiobutton(
+            self.settings_panel,
+            text="🌞 Светлая",
+            variable=self.theme_var,
+            value="light",
+            command=self.apply_theme
+        ).pack(anchor="w")
+
+        ttk.Radiobutton(
+            self.settings_panel,
+            text="🌙 Тёмная",
+            variable=self.theme_var,
+            value="dark",
+            command=self.apply_theme
+        ).pack(anchor="w")
+
+        # Разрешение
+        ttk.Label(
+            self.settings_panel,
+            text="Размер окна:",
+            padding=(0, 10, 0, 0)
+        ).pack(anchor="w")
+
+        self.resolution_var = tk.StringVar(value="900x600")
+
+        ttk.Combobox(
+            self.settings_panel,
+            textvariable=self.resolution_var,
+            values=[
+                "800x500",
+                "900x600",
+                "1024x700",
+                "1200x800"
+            ],
+            state="readonly",
+            width=12
+        ).pack(anchor="w")
+
+        ttk.Button(
+            self.settings_panel,
+            text="Применить",
+            command=self.apply_resolution
+        ).pack(pady=5)
 
         self.refresh_finance()
 
