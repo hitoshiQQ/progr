@@ -147,7 +147,7 @@ class CoinKeeperApp:
         self.update_category_list()
         self.category.set(new_cat)
 
-    def get_month_list(self):
+   
         months = set()
 
         for r in self.all_records:
@@ -238,18 +238,7 @@ class CoinKeeperApp:
         self.filter_date_to = ttk.Entry(filter_frame, width=12)
         self.filter_date_to.grid(row=0, column=3, padx=5)
 
-        ttk.Label(filter_frame, text="Месяц:").grid(row=0, column=4, padx=5)
-        self.filter_month = tk.StringVar(value="Все")
-        self.month_combo = ttk.Combobox(
-            filter_frame,
-            textvariable=self.filter_month,
-            values=self.get_month_list(),
-            state="readonly",
-            width=14
-        )
-        self.month_combo.grid(row=0, column=5, padx=5)
-
-        ttk.Label(filter_frame, text="Тип:").grid(row=0, column=6, padx=5)
+        ttk.Label(filter_frame, text="Тип:").grid(row=0, column=4, padx=5)
         self.filter_type = tk.StringVar(value="Все")
         ttk.Combobox(
             filter_frame,
@@ -257,13 +246,13 @@ class CoinKeeperApp:
             values=["Все", "Доход", "Расход"],
             state="readonly",
             width=10
-        ).grid(row=0, column=7, padx=5)
+        ).grid(row=0, column=5, padx=5)
 
         ttk.Label(filter_frame, text="Категория:").grid(
-            row=0, column=8, padx=5
+            row=0, column=6, padx=5
         )
         self.filter_category = ttk.Entry(filter_frame, width=15)
-        self.filter_category.grid(row=0, column=9, padx=5)
+        self.filter_category.grid(row=0, column=7, padx=5)
 
         ttk.Button(
             filter_frame,
@@ -336,9 +325,6 @@ class CoinKeeperApp:
             # Сохраняем ВСЕ данные
             save_data(self.all_records)
 
-            # Обновление списка месяцев при добавлении записи
-            self.month_combo["values"] = self.get_month_list()
-
             # Пересобираем месяц + архив
             self.split_records_by_month()
 
@@ -371,24 +357,6 @@ class CoinKeeperApp:
             filtered = [
                 r for r in filtered
                 if self.filter_category.get().lower() in r.category.lower()
-            ]
-
-        # --- фильтр по месяцу ---
-        if self.filter_month.get() != "Все":
-            month_name, year = self.filter_month.get().split()
-
-            month_map = {
-                "Январь": "01", "Февраль": "02", "Март": "03",
-                "Апрель": "04", "Май": "05", "Июнь": "06",
-                "Июль": "07", "Август": "08", "Сентябрь": "09",
-                "Октябрь": "10", "Ноябрь": "11", "Декабрь": "12"
-            }
-
-            month_code = f"{month_map[month_name]}.{year}"
-
-            filtered = [
-                r for r in filtered
-                if r.date[3:10] == month_code
             ]
 
         # --- фильтр по дате ---
