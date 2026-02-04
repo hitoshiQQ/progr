@@ -20,6 +20,61 @@ class CoinKeeperApp:
         self.root.title("Coin Keeper")
         self.root.geometry("900x550")
 
+        # Глобальный стиль
+        style = ttk.Style(self.root)
+        style.theme_use("clam")
+
+        style.configure(
+            ".",
+            font=("Segoe UI", 10),
+            background="#f5f6fa"
+        )
+
+        style.configure(
+            "TLabelframe",
+            background="#f5f6fa"
+        )
+        style.configure(
+            "TLabelframe.Label",
+            font=("Segoe UI", 10, "bold"),
+            foreground="#2f3640"
+        )
+
+        style.configure(
+            "TButton",
+            font=("Segoe UI", 10),
+            padding=6
+        )
+
+        style.configure(
+            "TEntry",
+            padding=6
+        )
+
+        style.configure(
+            "TCombobox",
+            padding=6
+        )
+
+        style.configure(
+            "Treeview",
+            font=("Segoe UI", 10),
+            rowheight=28,
+            background="white",
+            fieldbackground="white"
+        )
+
+        style.configure(
+            "Treeview.Heading",
+            font=("Segoe UI", 10, "bold")
+        )
+
+        style.configure(
+            "TNotebook.Tab",
+            font=("Segoe UI", 10, "bold"),
+            padding=(15, 6)
+        )
+
         # Данные
         self.all_records = load_data()   # Все данные
         self.records = []                # Текущий месяц
@@ -147,7 +202,6 @@ class CoinKeeperApp:
         self.update_category_list()
         self.category.set(new_cat)
 
-   
         months = set()
 
         for r in self.all_records:
@@ -177,10 +231,16 @@ class CoinKeeperApp:
         # =======================
         # ➕ Новая операция
         # =======================
-        add_frame = ttk.LabelFrame(f, text="➕ Новая операция", padding=10)
-        add_frame.pack(fill="x", padx=15, pady=10)
+        add_frame = ttk.Frame(f, padding=15)
+        add_frame.pack(fill="x", padx=20, pady=(15, 10))
 
-        ttk.Label(add_frame, text="Тип:").grid(row=0, column=0, padx=5)
+        ttk.Label(
+            add_frame,
+            text="➕ Новая операция",
+            font=("Segoe UI", 11, "bold")
+        ).grid(row=0, column=0, columnspan=10, sticky="w", pady=(0, 10))
+
+        ttk.Label(add_frame, text="Тип:").grid(row=1, column=0, padx=5)
         self.type_var = tk.StringVar(value="Расход")
 
         type_combo = ttk.Combobox(
@@ -190,55 +250,61 @@ class CoinKeeperApp:
             state="readonly",
             width=10
         )
-        type_combo.grid(row=0, column=1, padx=5)
+        type_combo.grid(row=1, column=1, padx=5)
         self.type_var.trace_add("write", self.update_category_list)
 
-        ttk.Label(add_frame, text="Категория:").grid(row=0, column=2, padx=5)
+        ttk.Label(add_frame, text="Категория:").grid(row=1, column=2, padx=5)
         self.category = ttk.Combobox(
             add_frame,
             values=self.categories[self.type_var.get()],
             width=18
         )
-        self.category.grid(row=0, column=3, padx=5)
+        self.category.grid(row=1, column=3, padx=5)
 
         ttk.Button(
             add_frame,
             text="➕",
             width=3,
             command=self.add_category
-        ).grid(row=0, column=4, padx=3)
+        ).grid(row=1, column=4, padx=3)
 
-        ttk.Label(add_frame, text="Сумма ₽:").grid(row=0, column=5, padx=5)
+        ttk.Label(add_frame, text="Сумма ₽:").grid(row=1, column=5, padx=5)
         self.amount = ttk.Entry(add_frame, width=10)
-        self.amount.grid(row=0, column=6, padx=5)
+        self.amount.grid(row=1, column=6, padx=5)
 
         ttk.Button(
             add_frame,
             text="✔ Добавить",
             command=self.add_record
-        ).grid(row=0, column=7, padx=10)
+        ).grid(row=1, column=7, padx=10)
 
         ttk.Button(
             add_frame,
             text="📊 График",
             command=self.show_chart
-        ).grid(row=0, column=8, padx=5)
+        ).grid(row=1, column=8, padx=5)
 
         # =======================
         # 🔎 Фильтры
         # =======================
-        filter_frame = ttk.LabelFrame(f, text="🔎 Фильтр", padding=10)
-        filter_frame.pack(fill="x", padx=15, pady=5)
+        filter_frame = ttk.Frame(f, padding=15)
+        filter_frame.pack(fill="x", padx=20, pady=5)
 
-        ttk.Label(filter_frame, text="Дата с:").grid(row=0, column=0, padx=5)
+        ttk.Label(
+            filter_frame,
+            text="🔎 Фильтр",
+            font=("Segoe UI", 11, "bold")
+        ).grid(row=0, column=0, columnspan=10, sticky="w", pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Дата с:").grid(row=1, column=0, padx=5)
         self.filter_date_from = ttk.Entry(filter_frame, width=12)
-        self.filter_date_from.grid(row=0, column=1, padx=5)
+        self.filter_date_from.grid(row=1, column=1, padx=5)
 
         ttk.Label(filter_frame, text="по:").grid(row=0, column=2)
         self.filter_date_to = ttk.Entry(filter_frame, width=12)
-        self.filter_date_to.grid(row=0, column=3, padx=5)
+        self.filter_date_to.grid(row=1, column=3, padx=5)
 
-        ttk.Label(filter_frame, text="Тип:").grid(row=0, column=4, padx=5)
+        ttk.Label(filter_frame, text="Тип:").grid(row=1, column=4, padx=5)
         self.filter_type = tk.StringVar(value="Все")
         ttk.Combobox(
             filter_frame,
@@ -246,37 +312,51 @@ class CoinKeeperApp:
             values=["Все", "Доход", "Расход"],
             state="readonly",
             width=10
-        ).grid(row=0, column=5, padx=5)
+        ).grid(row=1, column=5, padx=5)
 
         ttk.Label(filter_frame, text="Категория:").grid(
-            row=0, column=6, padx=5
+            row=1, column=6, padx=5
         )
         self.filter_category = ttk.Entry(filter_frame, width=15)
-        self.filter_category.grid(row=0, column=7, padx=5)
+        self.filter_category.grid(row=1, column=7, padx=5)
 
         ttk.Button(
             filter_frame,
             text="Применить",
             command=self.refresh_finance
-        ).grid(row=0, column=8, padx=10)
+        ).grid(row=1, column=8, padx=10)
 
         ttk.Button(
             filter_frame,
             text="Сброс",
             command=self.reset_filters
-        ).grid(row=0, column=9)
+        ).grid(row=1, column=9)
 
         # =======================
         # 📋 История операций
         # =======================
-        table_frame = ttk.LabelFrame(f, text="📋 История операций", padding=10)
-        table_frame.pack(fill="both", expand=True, padx=15, pady=5)
+        table_frame = ttk.LabelFrame(f, padding=10)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=5)
+
+        ttk.Label(
+            table_frame,
+            text="📋 История операций",
+            font=("Segoe UI", 11, "bold")
+        ).pack(anchor="w", pady=(0, 5))
 
         self.finance_table = ttk.Treeview(
             table_frame,
             columns=("date", "type", "category", "amount"),
             show="headings",
             height=10
+        )
+
+        # Цвета строк
+        self.finance_table.tag_configure(
+            "income", foreground="#2ecc71"
+        )
+        self.finance_table.tag_configure(
+            "expense", foreground="#e74c3c"
         )
 
         self.finance_table.heading("date", text="Дата")
@@ -294,15 +374,29 @@ class CoinKeeperApp:
         # =======================
         # 📊 Итоги
         # =======================
-        summary = ttk.LabelFrame(f, text="📊 Итоги", padding=10)
-        summary.pack(fill="x", padx=15, pady=10)
+        summary = ttk.LabelFrame(f, padding=15)
+        summary.pack(fill="x", padx=20, pady=10)
+
+        ttk.Label(
+            summary,
+            text="📊 Итоги",
+            font=("Segoe UI", 11, "bold")
+        ).pack(anchor="w", pady=(0, 5))
 
         self.summary_label = ttk.Label(
             summary,
             text="Доходы: 0 ₽   Расходы: 0 ₽   Баланс: 0 ₽",
-            font=("Segoe UI", 10, "bold")
+            font=("Segoe UI", 16, "bold"),
+            foreground="#273c75"
         )
-        self.summary_label.pack(anchor="center")
+        self.summary_label.pack()
+
+        self.summary_sub = ttk.Label(
+            summary,
+            font=("Segoe UI", 10),
+            foreground="#636e72"
+        )
+        self.summary_sub.pack()
 
         self.refresh_finance()
 
@@ -384,6 +478,8 @@ class CoinKeeperApp:
         # --- вывод таблицы ---
         for r in filtered:
             sign = "+" if r.type == "Доход" else "-"
+            tag = "income" if r.type == "Доход" else "expense"
+
             self.finance_table.insert(
                 "",
                 "end",
@@ -392,7 +488,8 @@ class CoinKeeperApp:
                     r.type,
                     r.category,
                     f"{sign}{r.amount:.2f} ₽"
-                )
+                ),
+                tags=(tag,)
             )
 
         # --- итоги (месяц / всё время) ---
@@ -402,10 +499,12 @@ class CoinKeeperApp:
             )
 
         self.summary_label.config(
+            text=f"Баланс: {total_balance:.2f} ₽"
+        )
+        self.summary_sub.config(
             text=(
-                f"Доходы (мес): {month_income:.2f} ₽   "
-                f"Расходы (мес): {month_expense:.2f} ₽   "
-                f"Баланс: {total_balance:.2f} ₽"
+                f"Доходы (мес): {month_income:.2f} ₽    "
+                f"Расходы (мес): {month_expense:.2f} ₽"
             )
         )
 

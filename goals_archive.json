@@ -6,12 +6,6 @@
     "completed_date": "09.01.2026"
   },
   {
-    "name": "айфон 17 хуйня",
-    "target": 120000.0,
-    "saved": 120000.0,
-    "completed_date": "12.01.2026"
-  },
-  {
     "name": "ыв",
     "target": 1.0,
     "saved": 1.0,
@@ -39,12 +33,6 @@
     "name": "Рыба",
     "target": 100.0,
     "saved": 102.0,
-    "completed_date": "13.01.2026"
-  },
-  {
-    "name": "18 хуйнякс",
-    "target": 5.0,
-    "saved": 5.0,
     "completed_date": "13.01.2026"
   }
 ]
