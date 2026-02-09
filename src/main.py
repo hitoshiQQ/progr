@@ -18,7 +18,10 @@ class CoinKeeperApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Coin Keeper")
-        self.root.geometry("900x550")
+
+        # Размер окна
+        self.root.geometry("900x600")
+        self.root.minsize(900, 900)
 
         # Глобальный стиль
         style = ttk.Style(self.root)
@@ -87,6 +90,9 @@ class CoinKeeperApp:
 
         self.categories = load_categories()
 
+        # Верхняя панель
+        self.build_top_bar()
+
         # notebook как self
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
@@ -95,7 +101,7 @@ class CoinKeeperApp:
         self.finance_tab = ttk.Frame(self.notebook)
         self.goals_tab = ttk.Frame(self.notebook)
         self.archive_tab = ttk.Frame(self.notebook)
-        self.finance_archive_tab = ttk.Frame(self.notebook)
+        self.finance_archive_tab = ttk.Frame(self.notebook)        
 
         self.notebook.add(self.finance_tab, text="Финансы")
         self.notebook.add(self.goals_tab, text="Цели")
@@ -103,6 +109,7 @@ class CoinKeeperApp:
         self.notebook.add(self.finance_archive_tab, text="📁 Архив финансов")
 
         self.build_finance_tab()
+        self.build_settings_panel()
         self.build_goals_tab()
         self.build_archive_tab()
         self.build_finance_archive_tab()
@@ -118,6 +125,8 @@ class CoinKeeperApp:
                 anchor="ne",
                 height=self.root.winfo_height()
             )
+            self.settings_panel.lift()
+
         self.settings_visiable = not self.settings_visiable
 
     def apply_theme(self):
@@ -166,6 +175,106 @@ class CoinKeeperApp:
 
     def apply_resolution(self):
         self.root.geometry(self.resolution_var.get())
+
+    def build_top_bar(self):
+        self.top_bar = ttk.Frame(self.root)
+        self.top_bar.pack(fill="x")
+
+        ttk.Label(
+            self.top_bar,
+            text="💰 CoinKeeper",
+            font=("Segoe UI", 14, "bold")
+        ).pack(side="left", padx=10, pady=5)
+
+        ttk.Button(
+            self.top_bar,
+            text="⚙",
+            width=3,
+            command=self.toggle_settings_panel
+        ).pack(side="right", padx=10)
+
+    # -------- НАСТРОЙКИ --------
+    def build_settings_panel(self):
+        self.settings_panel = ttk.Frame(
+            self.root,
+            width=260,
+            relief="ridge",
+            padding=10
+        )
+        self.settings_panel.place_forget()
+        self.settings_visiable = False
+
+        # =======================
+        # 🔝 Header + ✖
+        # =======================
+        header = ttk.Frame(self.settings_panel)
+        header.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(
+            header,
+            text="⚙ Настройки",
+            font=("Segoe UI", 12, "bold")
+        ).pack(side="left")
+
+        ttk.Button(
+            header,
+            text="✖",
+            width=3,
+            command=self.toggle_settings_panel
+        ).pack(side="right")
+
+        # =======================
+        # 🌗 Тема
+        # =======================
+        ttk.Label(self.settings_panel, text="Тема:").pack(anchor="w")
+
+        self.theme_var = tk.StringVar(value="light")
+
+        ttk.Radiobutton(
+            self.settings_panel,
+            text="🌞 Светлая",
+            variable=self.theme_var,
+            value="light",
+            command=self.apply_theme
+        ).pack(anchor="w")
+
+        ttk.Radiobutton(
+            self.settings_panel,
+            text="🌙 Тёмная",
+            variable=self.theme_var,
+            value="dark",
+            command=self.apply_theme
+        ).pack(anchor="w")
+
+        # =======================
+        # 📐 Размер окна
+        # =======================
+        ttk.Label(
+            self.settings_panel,
+            text="Размер окна:",
+            padding=(0, 10, 0, 0)
+        ).pack(anchor="w")
+
+        self.resolution_var = tk.StringVar(value="900x600")
+
+        ttk.Combobox(
+            self.settings_panel,
+            textvariable=self.resolution_var,
+            values=[
+                "800x500",
+                "900x600",
+                "1024x700",
+                "1200x800"
+            ],
+            state="readonly",
+            width=12
+        ).pack(anchor="w")
+
+        ttk.Button(
+            self.settings_panel,
+            text="Применить",
+            command=self.apply_resolution
+        ).pack(pady=10)
 
     # -------- СПЛИТ ПО МЕСЯЦАМ --------
     def split_records_by_month(self):
@@ -396,7 +505,7 @@ class CoinKeeperApp:
         # 📋 История операций
         # =======================
         table_frame = ttk.LabelFrame(f, padding=10)
-        table_frame.pack(fill="both", expand=True, padx=20, pady=5)
+        table_frame.pack(fill="both", padx=20, pady=5)
 
         ttk.Label(
             table_frame,
@@ -429,7 +538,7 @@ class CoinKeeperApp:
         self.finance_table.column("category", width=220)
         self.finance_table.column("amount", width=120, anchor="e")
 
-        self.finance_table.pack(fill="both", expand=True)
+        self.finance_table.pack(fill="both")
 
         # =======================
         # 📊 Итоги
@@ -457,91 +566,6 @@ class CoinKeeperApp:
             foreground="#636e72"
         )
         self.summary_sub.pack()
-
-        # =======================
-        # Настройки
-        # =======================
-        top_bar = ttk.Frame(f)
-        top_bar.pack(fill="x", padx=10, pady=5)
-
-        ttk.Label(
-            top_bar,
-            text="💰 CoinKeeper",
-            font=("Segoe UI", 14, "bold")
-        ).pack(side="left")
-
-        ttk.Button(
-            top_bar,
-            text="⚙",
-            width=3,
-            command=self.toggle_settings_panel
-        ).pack(side="right")
-
-        # =======================
-        # Панель Настройки
-        # =======================
-        self.settings_panel = ttk.Frame(
-            self.root,
-            width=260,
-            relief="ridge",
-            padding=10
-        )
-        self.settings_visiable = False
-
-        ttk.Label(
-            self.settings_panel,
-            text="⚙ Настройки",
-            font=("Segoe UI", 12, "bold")
-        ).pack(pady=(0, 10))
-
-        # Тема
-        ttk.Label(self.settings_panel, text="Тема:").pack(anchor="w")
-
-        self.theme_var = tk.StringVar(value="light")
-
-        ttk.Radiobutton(
-            self.settings_panel,
-            text="🌞 Светлая",
-            variable=self.theme_var,
-            value="light",
-            command=self.apply_theme
-        ).pack(anchor="w")
-
-        ttk.Radiobutton(
-            self.settings_panel,
-            text="🌙 Тёмная",
-            variable=self.theme_var,
-            value="dark",
-            command=self.apply_theme
-        ).pack(anchor="w")
-
-        # Разрешение
-        ttk.Label(
-            self.settings_panel,
-            text="Размер окна:",
-            padding=(0, 10, 0, 0)
-        ).pack(anchor="w")
-
-        self.resolution_var = tk.StringVar(value="900x600")
-
-        ttk.Combobox(
-            self.settings_panel,
-            textvariable=self.resolution_var,
-            values=[
-                "800x500",
-                "900x600",
-                "1024x700",
-                "1200x800"
-            ],
-            state="readonly",
-            width=12
-        ).pack(anchor="w")
-
-        ttk.Button(
-            self.settings_panel,
-            text="Применить",
-            command=self.apply_resolution
-        ).pack(pady=5)
 
         self.refresh_finance()
 
