@@ -99,16 +99,19 @@ class CoinKeeperApp:
 
         # вкладки
         self.finance_tab = ttk.Frame(self.notebook)
+        self.analytics_tab = ttk.Frame(self.notebook)
         self.goals_tab = ttk.Frame(self.notebook)
         self.archive_tab = ttk.Frame(self.notebook)
-        self.finance_archive_tab = ttk.Frame(self.notebook)        
+        self.finance_archive_tab = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.finance_tab, text="Финансы")
-        self.notebook.add(self.goals_tab, text="Цели")
+        self.notebook.add(self.finance_tab, text="💰 Финансы")
+        self.notebook.add(self.analytics_tab, text="📊 Аналитика")
+        self.notebook.add(self.goals_tab, text="🎯 Цели")
         self.notebook.add(self.archive_tab, text="🏆 Архив целей")
         self.notebook.add(self.finance_archive_tab, text="📁 Архив финансов")
 
         self.build_finance_tab()
+        self.build_analytics_tab()
         self.build_settings_panel()
         self.build_goals_tab()
         self.build_archive_tab()
@@ -814,28 +817,6 @@ class CoinKeeperApp:
 
         self.refresh_goals()
 
-    def build_archive_tab(self):
-        self.goals_archive_table = ttk.Treeview(
-            self.archive_tab,
-            columns=("name", "target", "saved", "date"),
-            show="headings",
-            height=8
-        )
-
-        self.goals_archive_table.heading("name", text="Цель")
-        self.goals_archive_table.heading("target", text="Цель ₽")
-        self.goals_archive_table.heading("saved", text="Накоплено ₽")
-        self.goals_archive_table.heading("date", text="Дата завершения")
-
-        self.goals_archive_table.pack(
-            fill="both",
-            expand=True,
-            padx=10,
-            pady=10
-        )
-
-        self.refresh_archive()
-
     def add_goal(self):
         try:
             target = float(self.goal_target.get())
@@ -917,17 +898,6 @@ class CoinKeeperApp:
                 "end",
                 values=(g.name, g.target, g.saved, f"{percent}%"))
 
-    def refresh_archive(self):
-        for i in self.goals_archive_table.get_children():
-            self.goals_archive_table.delete(i)
-
-        for g in self.archived_goals:
-            self.goals_archive_table.insert(
-                "",
-                "end",
-                values=(g.name, g.target, g.saved, g.completed_date or "-")
-            )
-
     def on_goal_select(self, event):
         selected = self.goals_table.focus()
         if not selected:
@@ -940,6 +910,184 @@ class CoinKeeperApp:
         self.goal_progress["value"] = percent
         self.goal_progress_label.config(
             text=f"Прогресс: {round(percent, 1)}%"
+        )
+
+    # -------- АРХИВ --------
+    def build_archive_tab(self):
+        self.goals_archive_table = ttk.Treeview(
+            self.archive_tab,
+            columns=("name", "target", "saved", "date"),
+            show="headings",
+            height=8
+        )
+
+        self.goals_archive_table.heading("name", text="Цель")
+        self.goals_archive_table.heading("target", text="Цель ₽")
+        self.goals_archive_table.heading("saved", text="Накоплено ₽")
+        self.goals_archive_table.heading("date", text="Дата завершения")
+
+        self.goals_archive_table.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=10
+        )
+
+        self.refresh_archive()
+
+    def refresh_archive(self):
+        for i in self.goals_archive_table.get_children():
+            self.goals_archive_table.delete(i)
+
+        for g in self.archived_goals:
+            self.goals_archive_table.insert(
+                "",
+                "end",
+                values=(g.name, g.target, g.saved, g.completed_date or "-")
+            )
+
+    # -------- АНАЛИТИКА --------
+    def build_analytics_tab(self):
+        f = self.analytics_tab
+
+        # =======================
+        # 📆 Период
+        # =======================
+        period_frame = ttk.Frame(f, padding=15)
+        period_frame.pack(fill="x", padx=20, pady=15)
+
+        ttk.Label(
+            period_frame,
+            text="📆 Период",
+            font=("Segoe UI", 11, "bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        controls = ttk.Frame(period_frame)
+        controls.pack(anchor="center")
+
+        self.analytics_period = tk.StringVar(value="Месяц")
+        self.analytics_date = date.today().replace(day=1)
+
+        ttk.Combobox(
+            controls,
+            textvariable=self.analytics_period,
+            values=["Месяц", "Год"],
+            state="readonly",
+            width=10
+        ).grid(row=0, column=0, padx=10)
+
+        ttk.Button(
+            controls,
+            text="◀",
+            command=lambda: self.shift_analytics_period(-1)
+        ).grid(row=0, column=1)
+
+        self.analytics_label = ttk.Label(
+            controls,
+            text=self.format_analytics_period(),
+            font=("Segoe UI", 12, "bold")
+        )
+        self.analytics_label.grid(row=0, column=2, padx=15)
+
+        ttk.Button(
+            controls,
+            text="▶",
+            command=lambda: self.shift_analytics_period(+1)
+        ).grid(row=0, column=3)
+
+        # =======================
+        # Итог
+        # =======================
+        summary = ttk.LabelFrame(f, padding=20)
+        summary.pack(fill="x", padx=20, pady=10)
+
+        ttk.Label(
+            summary,
+            text="📊 Итоги периода",
+            font=("Segoe UI", 11, "bold")
+        ).pack(anchor="w", pady=(0, 10))
+
+        self.analytics_summary = ttk.Label(
+            summary,
+            font=("Segoe UI", 16, "bold"),
+            foreground="#273c75"
+        )
+        self.analytics_summary.pack()
+
+        self.analytics_compare = ttk.Label(
+            summary,
+            font=("Segoe UI", 10),
+            foreground="#636e72"
+        )
+        self.analytics_compare.pack()
+
+        self.refresh_analytics()
+
+    def shift_analytics_period(self, step):
+        if self.analytics_period.get() == "Месяц":
+            month = self.analytics_date.month + step
+            year = self.analytics_date.year
+
+            if month < 1:
+                month = 12
+                year -= 1
+            elif month > 12:
+                month = 1
+                year += 1
+
+            self.analytics_date = self.analytics_date.replace(
+                year=year, month=month
+            )
+        else:
+            self.analytics_date = self.analytics_date.replace(
+                year=self.analytics_date.year + step
+            )
+
+        self.analytics_label.config(
+            text=self.format_analytics_period()
+        )
+
+        self.refresh_analytics()
+
+    def format_analytics_period(self):
+        if self.analytics_period.get() == "Месяц":
+            return self.analytics_date.strftime("%B %Y").capitalize()
+        else:
+            return str(self.analytics_date.year)
+
+    def refresh_analytics(self):
+        income = expense = 0
+
+        for r in self.all_records:
+            d = date.fromisoformat(r.date)
+
+            if self.analytics_period.get() == "Месяц":
+                if (d.year, d.month) != (
+                    self.analytics_date.year,
+                    self.analytics_date.month
+                ):
+                    continue
+            else:
+                if d.year != self.analytics_date.year:
+                    continue
+
+            if r.type == "Доход":
+                income += r.amount
+            else:
+                expense += r.amount
+
+        balance = income - expense
+
+        self.analytics_summary.config(
+            text=(
+               f"Доходы: {income:.2f} ₽   "
+               f"Расходы: {expense:.2f} ₽   "
+               f"Баланс: {balance:.2f} ₽"
+            )
+        )
+
+        self.analytics_compare.config(
+            text="Сравнение с предыдущим периодом — скоро 👀"
         )
 
     # -------- ПАРСЕРЫ --------
