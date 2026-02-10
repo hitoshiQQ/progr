@@ -54,5 +54,5 @@ def load_categories():
 
 
 def save_categories(categories):
-    with open(CATEGORIES_FILE, "w", encoding="uft-8") as f:
+    with open(CATEGORIES_FILE, "w", encoding="utf-8") as f:
         json.dump(categories, f, ensure_ascii=False, indent=2)
